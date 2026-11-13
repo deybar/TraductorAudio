@@ -1,0 +1,23 @@
+# Entornos virtuales
+.venv/
+env/
+venv/
+*.venv/
+
+# Caches de Python
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Logs
+*.log
+traductor_audio.log
+
+# Transcripciones generadas en sesiones locales
+transcripciones/*.txt
+!transcripciones/.gitkeep
+
+# IDEs
+.vscode/
+.idea/
+*.swp

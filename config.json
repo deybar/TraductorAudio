@@ -1,0 +1,18 @@
+{
+    "theme": "dark_carbon",
+    "opacity": 92,
+    "font_size": 16,
+    "model_size": "tiny.en",
+    "latency_mode": "ultra_fast",
+    "audio_source": "loopback",
+    "audio_device_index": null,
+    "display_mode": "bilingual",
+    "save_transcripts": true,
+    "transcripts_dir": "transcripciones",
+    "window_pos_x": 0,
+    "window_pos_y": 0,
+    "window_width": 640,
+    "window_height": 480,
+    "is_pinned": true,
+    "tools_expanded": true
+}
