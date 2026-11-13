@@ -69,8 +69,8 @@ class TranscriptLogger:
                 self._current_es_len < 450
             ):
                 entry = (
-                    f"    {text_en}\n"
-                    f" -> {text_es}\n\n"
+                    f"ES: {text_es}\n"
+                    f"EN: {text_en}\n\n"
                 )
                 self._last_time = now
                 self._current_es_len += len(text_es)
@@ -78,8 +78,8 @@ class TranscriptLogger:
                 timestamp = datetime.now().strftime("%H:%M:%S")
                 entry = (
                     f"[{timestamp}] [{speaker}]\n"
-                    f"EN: {text_en}\n"
-                    f"ES: {text_es}\n\n"
+                    f"ES: {text_es}\n"
+                    f"EN: {text_en}\n\n"
                 )
                 self._last_speaker = speaker
                 self._last_time = now

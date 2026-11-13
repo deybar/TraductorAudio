@@ -20,26 +20,25 @@ from PyQt6.QtGui import QColor, QFont, QCursor, QAction, QIcon, QTextCursor
 from theme_config import THEMES, get_theme_data, save_config
 
 class SubtitleTurn:
-    """Representa una intervención continua de un interlocutor sin fragmentación."""
+    """Representa una intervención continua de un interlocutor con pares frase a frase (EN, ES)."""
     def __init__(self, speaker: str, text_en: str, text_es: str):
         self.speaker = speaker
-        self.en_chunks = [text_en] if text_en else []
-        self.es_chunks = [text_es] if text_es else []
+        self.pairs: List[tuple] = []
+        if text_en or text_es:
+            self.pairs.append((text_en, text_es))
         self.last_update_time = time.time()
 
     @property
     def full_text_en(self) -> str:
-        return " ".join(self.en_chunks).strip()
+        return " ".join(p[0] for p in self.pairs if p[0]).strip()
 
     @property
     def full_text_es(self) -> str:
-        return " ".join(self.es_chunks).strip()
+        return " ".join(p[1] for p in self.pairs if p[1]).strip()
 
     def add_chunk(self, text_en: str, text_es: str):
-        if text_en:
-            self.en_chunks.append(text_en)
-        if text_es:
-            self.es_chunks.append(text_es)
+        if text_en or text_es:
+            self.pairs.append((text_en, text_es))
         self.last_update_time = time.time()
 
 class DraggableHeader(QFrame):
@@ -471,20 +470,34 @@ class SubtitleWindow(QWidget):
                 f"</div>"
             )
 
-            # Texto en Español continuo
-            if self.display_mode in ("bilingual", "spanish_only") or is_system:
+            # Modo Bilingüe (Pedagógico para aprendizaje de inglés):
+            # Muestra cada frase en Español con su Inglés correspondiente justo debajo y bien pegado
+            if self.display_mode == "bilingual" and not is_system:
+                for en_chunk, es_chunk in turn.pairs:
+                    block.append(
+                        f"<div style='margin-bottom: 6px; line-height: 1.25;'>"
+                        f"<div style='color: {t['text_primary']}; font-size: {es_size}px; "
+                        f"font-weight: 600; letter-spacing: 0.2px; line-height: 1.25;'>"
+                        f"{es_chunk}</div>"
+                        f"<div style='color: {t['text_secondary']}; font-size: {en_size}px; "
+                        f"font-style: italic; margin-top: 1px; line-height: 1.2;'>"
+                        f"&ldquo;{en_chunk}&rdquo;</div>"
+                        f"</div>"
+                    )
+
+            # Modo Solo Español (o mensaje de Sistema)
+            elif self.display_mode == "spanish_only" or is_system:
                 block.append(
                     f"<div style='color: {t['text_primary']}; font-size: {es_size}px; "
                     f"font-weight: 600; letter-spacing: 0.2px; line-height: 1.32; margin-top: 2px;'>"
                     f"{turn.full_text_es}</div>"
                 )
 
-            # Texto en Inglés continuo
-            if self.display_mode in ("bilingual", "english_only") and not is_system:
-                margin_top = "3px" if self.display_mode == "bilingual" else "1px"
+            # Modo Solo Inglés
+            elif self.display_mode == "english_only":
                 block.append(
                     f"<div style='color: {t['text_secondary']}; font-size: {en_size}px; "
-                    f"font-style: italic; margin-top: {margin_top}; line-height: 1.25;'>"
+                    f"font-style: italic; margin-top: 2px; line-height: 1.3;'>"
                     f"&ldquo;{turn.full_text_en}&rdquo;</div>"
                 )
 
