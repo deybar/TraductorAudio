@@ -127,3 +127,11 @@ Haz doble clic en los archivos de inicio incluidos en la raíz del proyecto:
 
 - **Cero telemetría:** La aplicación no se comunica con ningún servidor externo durante su funcionamiento.
 - **Seguridad corporativa:** Todas las conversaciones de Teams, Meet o vídeos procesados se mantienen de forma estricta y exclusiva en la memoria RAM y el disco local de tu equipo.
+
+---
+
+## 📋 Hoja de Ruta y Documentación
+
+- **[Documentación Técnica Completa](doc/README.md):** Arquitectura, pipeline de audio, protocolo IPC y guía de uso.
+- **[Bitácora de Desarrollo y Roadmap](BITACORA.md):** Diagnóstico técnico, deudas priorizadas y registro de versiones.
+- **[Integración en la Macro Suite de IA](doc/04_integracion_macro_sistema.md):** Sinergia con el Lanzador, Asistente de Reunión y preparación para el frontend unificado.

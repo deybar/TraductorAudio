@@ -6,7 +6,7 @@
     "latency_mode": "ultra_fast",
     "audio_source": "loopback",
     "audio_device_index": null,
-    "display_mode": "bilingual",
+    "display_mode": "spanish_only",
     "save_transcripts": true,
     "transcripts_dir": "transcripciones",
     "window_pos_x": 0,

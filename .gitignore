@@ -13,8 +13,8 @@ __pycache__/
 *.log
 traductor_audio.log
 
-# Transcripciones generadas en sesiones locales
-transcripciones/*.txt
+# Transcripciones y audios generados en sesiones locales
+transcripciones/*
 !transcripciones/.gitkeep
 
 # IDEs
