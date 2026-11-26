@@ -8,19 +8,21 @@ import numpy as np
 from typing import List, Dict, Optional
 
 class SpeakerIdentifier:
-    def __init__(self, max_speakers: int = 8, similarity_threshold: float = 0.82):
+    def __init__(self, max_speakers: int = 8, similarity_threshold: float = 0.70):
         self.max_speakers = max_speakers
         self.similarity_threshold = similarity_threshold
         # Perfiles de hablantes: {speaker_id: {"name": str, "centroid": np.ndarray, "count": int}}
         self.speakers: Dict[int, Dict] = {}
         self.last_speaker_id: int = 1
         self.next_speaker_id: int = 1
+        self._divergent_streak: int = 0
 
     def reset(self):
         """Reinicia la lista de interlocutores para una nueva sesión."""
         self.speakers.clear()
         self.last_speaker_id = 1
         self.next_speaker_id = 1
+        self._divergent_streak = 0
 
     def extract_voiceprint(self, audio: np.ndarray, sample_rate: int = 16000) -> Optional[np.ndarray]:
         """
@@ -150,7 +152,18 @@ class SpeakerIdentifier:
                 spk["centroid"] = new_centroid / new_norm
             spk["count"] += 1
             self.last_speaker_id = best_speaker_id
+            self._divergent_streak = 0
             return spk["name"]
+
+        # Histeresis para evitar fragmentar a un mismo hablante en variaciones tonales leves
+        self._divergent_streak += 1
+        clear_change = (best_similarity < 0.55) or (
+            len(audio) >= sample_rate * 1.2 and pause_duration >= 0.8 and self._divergent_streak >= 2
+        )
+        if not clear_change:
+            return self.speakers[self.last_speaker_id]["name"]
+
+        self._divergent_streak = 0
 
         # Si no coincide y aún podemos crear un nuevo hablante
         if len(self.speakers) < self.max_speakers:

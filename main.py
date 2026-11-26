@@ -47,11 +47,11 @@ from subtitle_window import SubtitleWindow
 
 SOCKET_NAME = "TraductorAudio_SingleInstance_2026"
 
-def ensure_single_instance(app, on_activate_cb) -> bool:
+def ensure_single_instance(app, on_activate_cb, on_quit_cb=None) -> bool:
     """Evita ejecuciones duplicadas del programa en segundo plano."""
     test_socket = QLocalSocket()
     test_socket.connectToServer(SOCKET_NAME)
-    if test_socket.waitForConnected(400):
+    if test_socket.waitForConnected(800):
         logger.info("Ya existe una instancia de Traductor de Audio activa. Activando ventana...")
         test_socket.write(b"ACTIVATE")
         test_socket.waitForBytesWritten(400)
@@ -64,9 +64,15 @@ def ensure_single_instance(app, on_activate_cb) -> bool:
         def handle_connection():
             client = server.nextPendingConnection()
             if client:
-                if client.waitForReadyRead(300):
+                if client.bytesAvailable() > 0 or client.waitForReadyRead(300):
                     data = client.readAll().data().decode("utf-8", errors="ignore")
-                    if "ACTIVATE" in data:
+                    if "QUIT" in data:
+                        logger.info("Recibida orden de cierre remoto (QUIT).")
+                        if on_quit_cb:
+                            on_quit_cb()
+                        else:
+                            app.quit()
+                    elif "ACTIVATE" in data:
                         on_activate_cb()
                 client.disconnectFromServer()
         server.newConnection.connect(handle_connection)
@@ -122,7 +128,7 @@ class ApplicationManager:
         # 3. Transcriptor y Traductor Local
         self.transcriber = LiveTranscriber(
             audio_queue=self.audio_queue,
-            model_size=self.config.get("model_size", "tiny.en"),
+            model_size=self.config.get("model_size", "base.en"),
             sample_rate=16000,
             latency_mode=self.config.get("latency_mode", "ultra_fast"),
             on_subtitle_ready=lambda spk, en, es: self.bridge.subtitle_received.emit(spk, en, es),
@@ -146,6 +152,7 @@ class ApplicationManager:
         self.subtitle_win.open_folder_requested.connect(self.logger_txt.open_folder)
         self.subtitle_win.theme_changed.connect(self._on_theme_changed)
         self.subtitle_win.latency_mode_changed.connect(self._handle_latency_mode_changed)
+        self.subtitle_win.model_changed.connect(self._handle_model_changed)
 
         self._setup_tray()
 
@@ -241,6 +248,10 @@ class ApplicationManager:
         self.transcriber.set_latency_mode(mode_key)
         logger.info(f"Modo de latencia actualizado a: {mode_key}")
 
+    def _handle_model_changed(self, model_key: str):
+        self.transcriber.change_model_size(model_key)
+        logger.info(f"Modelo de voz actualizado a: {model_key}")
+
     def _handle_status_update(self, msg: str):
         logger.info(f"Estado: {msg}")
         self.subtitle_win.set_status_message(msg)
@@ -300,8 +311,14 @@ if __name__ == "__main__":
         if manager:
             manager.activate_window()
 
+    def on_quit():
+        if manager:
+            manager._quit()
+        else:
+            app.quit()
+
     # Protección de Instancia Única
-    if not ensure_single_instance(app, on_activate):
+    if not ensure_single_instance(app, on_activate, on_quit_cb=on_quit):
         logger.info("Ya había una instancia corriendo. Esta segunda instancia se cierra de inmediato.")
         sys.exit(0)
 

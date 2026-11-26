@@ -63,6 +63,24 @@ flowchart LR
 
 Formato basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.0.0/) y versionado semántico.
 
+### [1.2.0] - 2026-11-20
+#### Diagnóstico de Sesiones Reales (19–20 Nov)
+- **Corrupción en traducción (`compute_type="int8"`):** Detectado en CTranslate2 sobre el paquete `en_es` en CPU; provocaba distorsiones en frases largas. Corregido migrando a `compute_type="default"`.
+- **Pérdida de geometría al reiniciar:** La ventana de subtítulos restablecía coordenadas tras cambios rápidos. Corregido inicializando posición persistida antes de `apply_theme()`.
+- **Palabras partidas al límite de `max_speech` (ej. `"for part... | type in"` por `"for prototyping"`):** El corte rígido por tiempo fragmentaba palabras inglesas entre bloques y descartaba cola de audio.
+- **Doble filtrado Silero VAD:** Ejecutar `vad_filter=True` dentro de `WhisperModel.transcribe` tras segmentar con Silero VAD v6 consumía CPU innecesariamente y recortaba inicios/finales de palabra.
+
+#### Optimizaciones y Experimentos Implementados
+- **Modelo por defecto actualizado a `base.en` (`theme_config.py`, `config.json`):** Mejor equilibrio entre precisión léxica en inglés técnico y velocidad en CPU (`Intel Core i7-6500U`, `cpu_threads=4`, `beam_size=2`).
+- **Multi-Scale Word-Valley Splitting (130ms + 240ms):** Nuevo algoritmo `_find_best_valley_cut()` que localiza el valle de mínima energía en los últimos `2.0s` al alcanzar `max_speech`, conservando íntegramente `carry_over = raw_buffer[cut_idx:]` para el siguiente bloque sin perder sílabas ni muestras.
+- **Calibración Silero VAD v6 + Acondicionador Acústico:** Reducción de ganancia máxima VAD de `10x` a `3.5x` (umbral `0.42`) para no elevar música o ruido sobre el detector, manteniendo filtro pasa-altos 80Hz + AGC adaptativo en inferencia y desactivando `vad_filter` redundante en Whisper.
+- **Contexto Técnico Continuo y Cierre Ordenado:** `initial_prompt` enriquecido con terminología técnica + ventana móvil de contexto (`140` caracteres), cola `_transcribe_queue` ampliada a `16` y método `flush_and_stop()` sin pérdida del último fragmento.
+- **Histeresis en Diarización (`speaker_engine.py`) e IPC (`QUIT`):** Estabilización de etiquetas (`Hablante 1`) y soporte de cierre remoto desde el widget lanzador.
+
+#### Validación Funcional y Pruebas (`test_real_audio_translation.py` + `test_full_pipeline.py`)
+- **Síntesis SAPI5 Real (`Microsoft Zira Desktop`, 17.18s audio técnico EN):** Procesada en `11.18s` (**`RTF = 0.65x`**, más rápido que tiempo real), **5/5** palabras clave técnicas reconocidas (`engineering`, `prototyping`, `raspberry`, `hardware`, `software`), traducción española precisa y registro `.txt` verificado.
+- **Captura en Vivo WASAPI Loopback:** Verificada captura real desde altavoces del sistema con fallback automático en entorno silencioso.
+
 ### [1.1.0] - 2026-11-19
 #### Añadido
 - **Alineación con la Macro Suite de IA:** Renombramiento de rama principal a `main`.

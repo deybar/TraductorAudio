@@ -80,6 +80,7 @@ class SubtitleWindow(QWidget):
     open_folder_requested = pyqtSignal()
     theme_changed = pyqtSignal(str)
     latency_mode_changed = pyqtSignal(str)
+    model_changed = pyqtSignal(str)
 
     def __init__(self, config: Dict[str, Any]):
         super().__init__()
@@ -99,15 +100,18 @@ class SubtitleWindow(QWidget):
         self.max_saved_turns = 60
 
         self._init_ui()
+
+        # Restaurar posición y tamaño guardados ANTES de aplicar tema
+        x = self.config.get("window_pos_x", 240)
+        y = self.config.get("window_pos_y", 680)
+        w = self.config.get("window_width", 820)
+        h = self.config.get("window_height", 180)
+        if x == 0 and y == 0:
+            x, y, w, h = 240, 680, 820, 180
+        self.setGeometry(x, y, w, h)
+
         self.apply_theme(self.config.get("theme", "dark_carbon"))
         self.set_window_opacity_percent(self.config.get("opacity", 92))
-
-        # Restaurar posición y tamaño guardados
-        x = self.config.get("window_pos_x", 200)
-        y = self.config.get("window_pos_y", 780)
-        w = self.config.get("window_width", 880)
-        h = self.config.get("window_height", 160)
-        self.setGeometry(x, y, w, h)
 
     def _init_ui(self):
         self.setWindowTitle("Subtítulos en Vivo (100% Local)")
@@ -363,7 +367,6 @@ class SubtitleWindow(QWidget):
         self._update_toggle_button_visual()
         if hasattr(self, "turns") and self.turns:
             self._render_all_subtitles()
-        self.save_current_geometry()
 
     def set_window_opacity_percent(self, opacity_percent: int):
         val = max(50, min(100, opacity_percent))
@@ -625,6 +628,19 @@ class SubtitleWindow(QWidget):
             act = latency_menu.addAction(f"{prefix}{label}")
             act.triggered.connect(lambda checked, k=key: self._set_latency_mode(k))
 
+        # Submenú de Modelo Whisper IA
+        model_menu = menu.addMenu("🧠 Modelo de Voz IA")
+        model_options = [
+            ("base.en", "🎯 Base EN (Recomendado - Alta Precisión)"),
+            ("small.en", "🧠 Small EN (Máxima Fidelidad Técnica)"),
+            ("tiny.en", "⚡ Tiny EN (Ultra-Ligero)")
+        ]
+        curr_model = self.config.get("model_size", "base.en")
+        for m_key, m_label in model_options:
+            prefix = "✓ " if m_key == curr_model else "   "
+            act = model_menu.addAction(f"{prefix}{m_label}")
+            act.triggered.connect(lambda checked, k=m_key: self._set_model_size(k))
+
         menu.addSeparator()
 
         # Abrir carpeta de transcripciones
@@ -645,6 +661,11 @@ class SubtitleWindow(QWidget):
         self.config["latency_mode"] = mode_key
         save_config(self.config)
         self.latency_mode_changed.emit(mode_key)
+
+    def _set_model_size(self, model_key: str):
+        self.config["model_size"] = model_key
+        save_config(self.config)
+        self.model_changed.emit(model_key)
 
     def save_current_geometry(self):
         geo = self.geometry()

@@ -102,7 +102,7 @@ DEFAULT_CONFIG: Dict[str, Any] = {
     "theme": "dark_carbon",
     "opacity": 92,
     "font_size": 16,
-    "model_size": "tiny.en",
+    "model_size": "base.en",
     "latency_mode": "ultra_fast",  # "ultra_fast" (~1s), "balanced" (~2s), "extended" (~4s)
     "audio_source": "loopback",  # "loopback" o "microphone"
     "audio_device_index": None,
